@@ -26,6 +26,7 @@ HEADERS += \
 
 DISTFILES += \
     qml/pages/DictaphonePage.qml \
+    qml/pages/RecordTrack.qml \
     qml/pages/RecordingPage.qml \
     qml/pages/RedactingPage.qml \
     rpm/ru.template.smart.spec \
@@ -35,7 +36,7 @@ AURORAAPP_ICONS = 86x86 108x108 128x128 172x172
 CONFIG += auroraapp_i18n
 
 QT += multimedia
-
+INCLUDEPATH += backend
 TRANSLATIONS += \
     translations/ru.template.smart.ts \
     translations/ru.template.smart-ru.ts \

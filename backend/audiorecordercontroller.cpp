@@ -45,11 +45,30 @@ void AudioRecorderController::setDefaultRecordSettings()
     QAudioRecorder recorder;
     QStringList containers = recorder.supportedContainers();
     QStringList codecs = recorder.supportedAudioCodecs();
+
+    qDebug() << "Available containers:" << containers;
+    qDebug() << "Available codecs:" << codecs;
+
     if (containers.isEmpty() || codecs.isEmpty()) {
+        qDebug() << "ERROR: No supported containers or codecs found";
         emit recordErrorOccured("No supported containers or codecs found");
         return;
     }
-    audioRecorder.setRecordSettings(codecs.first(), containers.first());
+
+    // Предпочитаем wav + PCM — самый совместимый вариант
+    QString codec = "audio/PCM";
+    QString container = "wav";
+
+    if (!codecs.contains(codec))
+        codec = codecs.first();
+    if (!containers.contains(container))
+        container = containers.first();
+
+    qDebug() << "Using codec:" << codec << "container:" << container;
+    audioRecorder.setRecordSettings(codec, container);
+
+    // Принудительно сообщаем что готовы
+    emit recorderPrepared();
 }
 
 qreal AudioRecorderController::getAudioLevel()

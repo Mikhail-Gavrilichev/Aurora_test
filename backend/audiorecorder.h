@@ -1,10 +1,6 @@
 #ifndef AUDIORECORDER_H
 #define AUDIORECORDER_H
 
-#endif // AUDIORECORDER_H
-#ifndef AUDIORECORDER_H
-#define AUDIORECORDER_H
-
 #include <QObject>
 #include <QAudioRecorder>
 #include <QUrl>

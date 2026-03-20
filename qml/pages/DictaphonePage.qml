@@ -1,7 +1,6 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
 import ru.auroraos.AudioRecorder 1.0
-import Aurora.Controls 1.0
 import "../components"
 
 Page {
@@ -15,6 +14,7 @@ Page {
     property real currentLevel: 0.0
     property bool isRecording: false
     property bool isPaused: false
+    property bool isReady: false
     property string volumeWarning: ""
 
     onStatusChanged: {
@@ -33,6 +33,7 @@ Page {
         }
 
         onRecordStarted: {
+            console.log("Record started!")
             isRecording = true
             isPaused = false
             playerController.isPlaybackAvailable = false
@@ -40,6 +41,7 @@ Page {
         }
 
         onRecordPaused: {
+            console.log("Record paused!")
             isPaused = true
             isRecording = false
             playerController.setSource(currentRecordPath)
@@ -47,6 +49,7 @@ Page {
         }
 
         onRecordStopped: {
+            console.log("Record stopped!")
             isRecording = false
             isPaused = false
             playerController.stop()
@@ -55,16 +58,28 @@ Page {
             currentLevel = 0.0
         }
 
-        onAudiofilePathChanged: currentRecordPath = path
-        onRecorderPrepared: recordButton.enabled = true
+        onAudiofilePathChanged: {
+            console.log("File path: " + path)
+            currentRecordPath = path
+        }
+
+        onRecorderPrepared: {
+            console.log("Recorder prepared!")
+            isReady = true
+        }
 
         onRecordErrorOccured: {
+            console.log("Record error: " + error)
             errorMsg.visible = true
             errorMsg.text = error
             buttonRow.visible = false
         }
 
-        Component.onCompleted: setDefaultRecordSettings()
+        Component.onCompleted: {
+            console.log("Setting default record settings...")
+            setDefaultRecordSettings()
+            console.log("Default settings applied")
+        }
     }
 
     function updateVolumeWarning(level) {
@@ -76,7 +91,6 @@ Page {
             volumeWarning = ""
     }
 
-    // Заголовок
     PageHeader {
         id: pageHeader
         title: qsTr("Диктофон")
@@ -91,7 +105,6 @@ Page {
             bottom: parent.bottom
         }
 
-        // Визуализация звуковой дорожки
         RecordTrack {
             id: recordTrack
             anchors {
@@ -104,7 +117,6 @@ Page {
             }
         }
 
-        // Шкала громкости
         Column {
             id: volumeColumn
             anchors {
@@ -122,7 +134,6 @@ Page {
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
-            // Полоска громкости
             Item {
                 width: parent.width
                 height: Theme.itemSizeExtraSmall / 2
@@ -158,7 +169,6 @@ Page {
                     }
                 }
 
-                // Метки порогов
                 Rectangle {
                     x: parent.width * lowThreshold
                     anchors { top: parent.top; bottom: parent.bottom }
@@ -181,7 +191,6 @@ Page {
             }
         }
 
-        // Предупреждение
         Label {
             id: warningLabel
             anchors {
@@ -206,7 +215,6 @@ Page {
             }
         }
 
-        // Ошибка
         Label {
             id: errorMsg
             wrapMode: Text.Wrap
@@ -219,7 +227,6 @@ Page {
             color: "#F44336"
         }
 
-        // Таймер
         Label {
             id: timePassed
             anchors {
@@ -232,7 +239,6 @@ Page {
             color: isRecording ? Theme.highlightColor : Theme.primaryColor
         }
 
-        // Кнопки
         Row {
             id: buttonRow
             anchors {
@@ -240,10 +246,9 @@ Page {
                 bottom: parent.bottom
                 margins: Theme.horizontalPageMargin
             }
-            height: recordButton.height + recordLabel.height + Theme.paddingSmall
+            height: Theme.iconSizeExtraLarge + recordLabel.height + Theme.paddingSmall
             spacing: Theme.itemSizeSmall
 
-            // Запись / Пауза
             Column {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.paddingSmall
@@ -260,8 +265,11 @@ Page {
                     }
                     width: Theme.iconSizeExtraLarge
                     height: Theme.iconSizeExtraLarge
-                    enabled: false
-                    onClicked: audioRecorder.startRecord()
+                    enabled: isReady
+                    onClicked: {
+                        console.log("Record button clicked!")
+                        audioRecorder.startRecord()
+                    }
                 }
 
                 Label {
@@ -277,7 +285,6 @@ Page {
                 }
             }
 
-            // Стоп
             Column {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.paddingSmall
@@ -293,7 +300,10 @@ Page {
                     }
                     width: Theme.iconSizeLarge
                     height: Theme.iconSizeLarge
-                    onClicked: audioRecorder.stopRecord()
+                    onClicked: {
+                        console.log("Stop button clicked!")
+                        audioRecorder.stopRecord()
+                    }
                 }
 
                 Label {
