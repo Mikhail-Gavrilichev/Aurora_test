@@ -6,13 +6,26 @@ CONFIG += \
 PKGCONFIG += \
 
 SOURCES += \
+    backend/audioamplitudemodel.cpp \
+    backend/audiobufferextension.cpp \
+    backend/audioplayercontroller.cpp \
+    backend/audiorecorder.cpp \
+    backend/audiorecordercontroller.cpp \
     backend/sessionmanag.cpp \
+    backend/timelinemodel.cpp \
     src/main.cpp \
 
 HEADERS += \
-    backend/sessionmanag.h
+    backend/audioamplitudemodel.h \
+    backend/audiobufferextension.h \
+    backend/audioplayercontroller.h \
+    backend/audiorecorder.h \
+    backend/audiorecordercontroller.h \
+    backend/sessionmanag.h \
+    backend/timelinemodel.h
 
 DISTFILES += \
+    qml/pages/DictaphonePage.qml \
     qml/pages/RecordingPage.qml \
     qml/pages/RedactingPage.qml \
     rpm/ru.template.smart.spec \
@@ -20,6 +33,8 @@ DISTFILES += \
 AURORAAPP_ICONS = 86x86 108x108 128x128 172x172
 
 CONFIG += auroraapp_i18n
+
+QT += multimedia
 
 TRANSLATIONS += \
     translations/ru.template.smart.ts \

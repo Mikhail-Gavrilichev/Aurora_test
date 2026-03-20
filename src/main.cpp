@@ -1,17 +1,24 @@
-#include <QtQuick>
 #include <auroraapp.h>
-//#include "./backend/sessionmanager.h"
+#include <QtQuick>
+
+#include "audiorecordercontroller.h"
+#include "audioplayercontroller.h"
+#include "audioamplitudemodel.h"
+#include "timelinemodel.h"
+
 int main(int argc, char *argv[])
 {
     QScopedPointer<QGuiApplication> application(Aurora::Application::application(argc, argv));
-    application->setOrganizationName(QStringLiteral("ru.template"));
-    application->setApplicationName(QStringLiteral("smart"));
+    application->setOrganizationName(QStringLiteral("ru.auroraos"));
+    application->setApplicationName(QStringLiteral("Dictaphone"));
 
-    //qmlRegisterType<SessionManager>("com.example.sessions", 1, 0, "SessionManager");
+    qmlRegisterType<AudioRecorderController>("ru.auroraos.AudioRecorder", 1, 0,
+                                             "AudioRecorderController");
+    qmlRegisterType<AudioPlayerController>("ru.auroraos.AudioRecorder", 1, 0,
+                                           "AudioPlayerController");
 
     QScopedPointer<QQuickView> view(Aurora::Application::createView());
-    view->setSource(Aurora::Application::pathTo(QStringLiteral("qml/smart.qml")));
+    view->setSource(Aurora::Application::pathTo(QStringLiteral("qml/Dictaphone.qml")));
     view->show();
-
     return application->exec();
 }

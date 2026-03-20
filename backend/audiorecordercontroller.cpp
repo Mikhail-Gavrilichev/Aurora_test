@@ -1,0 +1,58 @@
+#include "audiorecordercontroller.h"
+
+AudioRecorderController::AudioRecorderController(QObject *parent) : QObject(parent)
+{
+    connect(&audioRecorder, &AudioRecorder::durationChanged, this,
+            &AudioRecorderController::audioDurationChanged);
+    connect(&audioRecorder, &AudioRecorder::error, this,
+            &AudioRecorderController::recordErrorOccured);
+    connect(&audioRecorder, &AudioRecorder::recordStarted, this,
+            &AudioRecorderController::recordStarted);
+    connect(&audioRecorder, &AudioRecorder::recordPaused, this,
+            &AudioRecorderController::recordPaused);
+    connect(&audioRecorder, &AudioRecorder::recordStopped, this,
+            &AudioRecorderController::recordStopped);
+    connect(&audioRecorder, &AudioRecorder::recorderPrepared, this,
+            &AudioRecorderController::recorderPrepared);
+    connect(&audioRecorder, &AudioRecorder::audiofilePathChanged, this,
+            &AudioRecorderController::audiofilePathChanged);
+}
+
+void AudioRecorderController::startRecord()
+{
+    if (isRecordStarted) {
+        isRecordStarted = false;
+        audioRecorder.pause();
+    } else {
+        isRecordStarted = true;
+        audioRecorder.start();
+    }
+}
+
+void AudioRecorderController::stopRecord()
+{
+    isRecordStarted = false;
+    audioRecorder.stop();
+}
+
+void AudioRecorderController::setRecordSettings(QString codec, QString container)
+{
+    audioRecorder.setRecordSettings(codec, container);
+}
+
+void AudioRecorderController::setDefaultRecordSettings()
+{
+    QAudioRecorder recorder;
+    QStringList containers = recorder.supportedContainers();
+    QStringList codecs = recorder.supportedAudioCodecs();
+    if (containers.isEmpty() || codecs.isEmpty()) {
+        emit recordErrorOccured("No supported containers or codecs found");
+        return;
+    }
+    audioRecorder.setRecordSettings(codecs.first(), containers.first());
+}
+
+qreal AudioRecorderController::getAudioLevel()
+{
+    return audioRecorder.getCurrentLevel();
+}
