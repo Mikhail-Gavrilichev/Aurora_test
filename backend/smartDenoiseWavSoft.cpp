@@ -1,0 +1,96 @@
+#include <fstream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <QVariantList>
+#include <QVariantMap>
+#include "AudioAnalyzer.h"
+
+bool applyDenoiseOnly(
+    const QString &filePath,
+    const QString &outputPath
+    ) {
+    AudioAnalyzer analyzer;
+
+    // --- 1. Получаем сегменты из новой системы ---
+    QVariantList segments = analyzer.analyzeFile(filePath);
+
+    std::ifstream inFile(filePath.toStdString(), std::ios::binary);
+    if (!inFile) return false;
+
+    WAVHeader header;
+    inFile.read(reinterpret_cast<char*>(&header), sizeof(WAVHeader));
+
+    // Проверка WAV
+    if (std::string(header.riff, 4) != "RIFF" ||
+        header.audioFormat != 1 ||
+        header.bitsPerSample != 16) {
+        return false;
+    }
+
+    uint16_t channels = header.numChannels;
+    uint32_t sampleRate = header.sampleRate;
+    uint32_t bytesPerSample = header.bitsPerSample / 8;
+
+    // --- 2. Читаем весь буфер ---
+    std::vector<int16_t> buffer(header.dataSize / bytesPerSample);
+    inFile.read(reinterpret_cast<char*>(buffer.data()), header.dataSize);
+    inFile.close();
+
+    // --- 3. Считаем RMS по сегментам тишины ---
+    double sumSq = 0.0;
+    size_t count = 0;
+
+    for (const QVariant &v : segments) {
+        QVariantMap seg = v.toMap();
+
+        int type = seg["type"].toInt();
+        if (type != 3) continue; // 3 = тишина
+
+        uint32_t startSample = seg["t1"].toDouble() * sampleRate / 1000;
+        uint32_t endSample = seg["t2"].toDouble() * sampleRate / 1000;
+
+        endSample = std::min(endSample, static_cast<uint32_t>(buffer.size() / channels));
+
+        for (uint32_t i = startSample; i < endSample; ++i) {
+            for (int ch = 0; ch < channels; ++ch) {
+                double s = buffer[i * channels + ch];
+                sumSq += s * s;
+                count++;
+            }
+        }
+    }
+
+    // fallback если тишина не найдена
+    double backgroundRMS = (count > 0) ? std::sqrt(sumSq / count) : 800.0;
+
+    double noiseThreshold = backgroundRMS * 1.5;
+
+    // --- 4. Применяем denoise ---
+    std::vector<int16_t> outBuffer = buffer;
+
+    for (size_t i = 0; i < outBuffer.size(); ++i) {
+        int16_t &sample = outBuffer[i];
+        double absS = std::abs(sample);
+
+        if (absS < noiseThreshold) {
+            double factor = absS / noiseThreshold;
+            double smoothFactor = factor * factor;
+
+            // не даём полной тишины
+            smoothFactor = std::max(smoothFactor, 0.05);
+
+            sample = static_cast<int16_t>(sample * smoothFactor);
+        }
+    }
+
+    // --- 5. Сохраняем ---
+    std::ofstream outFile(outputPath.toStdString(), std::ios::binary);
+    if (!outFile) return false;
+
+    outFile.write(reinterpret_cast<char*>(&header), sizeof(WAVHeader));
+    outFile.write(reinterpret_cast<char*>(outBuffer.data()), outBuffer.size() * bytesPerSample);
+    outFile.close();
+
+    return true;
+}

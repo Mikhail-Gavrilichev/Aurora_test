@@ -25,6 +25,7 @@ private:
     qreal m_currentLevel;
     bool m_isNewRecord;
     QString generateFileName();
+    QString m_lastFilePath;
 
 signals:
     void durationChanged(qint64 duration);

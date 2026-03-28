@@ -6,22 +6,26 @@ CONFIG += \
 PKGCONFIG += \
 
 SOURCES += \
+    backend/audioAnalyzer.cpp \
     backend/audioamplitudemodel.cpp \
     backend/audiobufferextension.cpp \
     backend/audioplayercontroller.cpp \
     backend/audiorecorder.cpp \
     backend/audiorecordercontroller.cpp \
     backend/sessionmanag.cpp \
+    backend/smartDenoiseWavSoft.cpp \
     backend/timelinemodel.cpp \
     src/main.cpp \
 
 HEADERS += \
+    backend/audioAnalyzer.h \
     backend/audioamplitudemodel.h \
     backend/audiobufferextension.h \
     backend/audioplayercontroller.h \
     backend/audiorecorder.h \
     backend/audiorecordercontroller.h \
     backend/sessionmanag.h \
+    backend/smartDenoiseWavSoft.h \
     backend/timelinemodel.h
 
 DISTFILES += \

@@ -2,6 +2,7 @@
 #include <QStandardPaths>
 #include <qendian.h>
 
+#include "smartDenoiseWavSoft.h"
 #include "audiorecorder.h"
 #include "audiobufferextension.h"
 
@@ -31,6 +32,7 @@ void AudioRecorder::start()
                 .arg(QStandardPaths::writableLocation(QStandardPaths::MusicLocation),
                      generateFileName(), m_audioRecorder.containerFormat());
         m_audioRecorder.setOutputLocation(QUrl(audiofilePath));
+        m_lastFilePath = audiofilePath;
         emit audiofilePathChanged(audiofilePath);
     }
     m_audioRecorder.record();
@@ -83,5 +85,17 @@ void AudioRecorder::onRecorderStatusChanged(QMediaRecorder::Status status)
     else if (status == QAudioRecorder::PausedStatus)
         emit recordPaused();
     else if (status == QAudioRecorder::FinalizingStatus)
+        qDebug() << "Applying denoise to:" << m_lastFilePath;
+
+        QString outputPath = m_lastFilePath;
+        outputPath.replace(".wav", "_denoised.wav");
+
+        bool ok = applyDenoiseOnly(m_lastFilePath, outputPath);
+
+        if (ok) {
+            qDebug() << "Denoised file saved:" << outputPath;
+        } else {
+            qDebug() << "Denoise failed";
+        }
         emit recordStopped();
 }
