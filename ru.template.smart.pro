@@ -7,26 +7,30 @@ PKGCONFIG += \
 
 SOURCES += \
     backend/audioAnalyzer.cpp \
-    backend/audioamplitudemodel.cpp \
+    backend/audioamplitudePlayer.cpp \
+    backend/audioamplitudemodelPlayer.cpp \
     backend/audiobufferextension.cpp \
-    backend/audioplayercontroller.cpp \
+    backend/audioplayercontrollerPlayer.cpp \
     backend/audiorecorder.cpp \
     backend/audiorecordercontroller.cpp \
     backend/sessionmanag.cpp \
     backend/smartDenoiseWavSoft.cpp \
-    backend/timelinemodel.cpp \
+    backend/timelineblockPlayer.cpp \
+    backend/timelinemodelPlayer.cpp \
     src/main.cpp \
 
 HEADERS += \
     backend/audioAnalyzer.h \
-    backend/audioamplitudemodel.h \
+    backend/audioamplitudePlayer.h \
+    backend/audioamplitudemodelPlayer.h \
     backend/audiobufferextension.h \
-    backend/audioplayercontroller.h \
+    backend/audioplayercontrollerPlayer.h \
     backend/audiorecorder.h \
     backend/audiorecordercontroller.h \
     backend/sessionmanag.h \
     backend/smartDenoiseWavSoft.h \
-    backend/timelinemodel.h
+    backend/timelineblockPlayer.h \
+    backend/timelinemodelPlayer.h
 
 DISTFILES += \
     qml/pages/DictaphonePage.qml \
