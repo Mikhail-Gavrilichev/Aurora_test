@@ -15,6 +15,8 @@ AudioRecorder::AudioRecorder(QObject *parent) : QObject(parent), m_isNewRecord(t
             this, &AudioRecorder::onRecordError);
     connect(&m_audioRecorder, &QAudioRecorder::statusChanged, this,
             &AudioRecorder::onRecorderStatusChanged);
+    connect(&m_audioRecorder, &QAudioRecorder::stateChanged,
+            this, &AudioRecorder::onRecorderStateChanged);
 }
 
 QString AudioRecorder::generateFileName()
@@ -84,8 +86,15 @@ void AudioRecorder::onRecorderStatusChanged(QMediaRecorder::Status status)
         emit recordStarted();
     else if (status == QAudioRecorder::PausedStatus)
         emit recordPaused();
-    else if (status == QAudioRecorder::FinalizingStatus)
-        qDebug() << "Applying denoise to:" << m_lastFilePath;
+    else if (status == QAudioRecorder::FinalizingStatus) {
+        emit recordStopped();
+    }
+}
+
+void AudioRecorder::onRecorderStateChanged(QMediaRecorder::State state)
+{
+    if (state == QMediaRecorder::StoppedState) {
+        qDebug() << "Recorder fully stopped. Safe to process file.";
 
         QString outputPath = m_lastFilePath;
         outputPath.replace(".wav", "_denoised.wav");
@@ -97,5 +106,7 @@ void AudioRecorder::onRecorderStatusChanged(QMediaRecorder::Status status)
         } else {
             qDebug() << "Denoise failed";
         }
+
         emit recordStopped();
+    }
 }

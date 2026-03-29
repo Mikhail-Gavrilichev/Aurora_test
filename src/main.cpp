@@ -1,9 +1,9 @@
 #include <QtQuick>
 #include <auroraapp.h>
 
+#include "./backend/audioAnalyzer.h"
 #include "audioplayercontroller.h"
 #include "audiorecordercontroller.h"
-#include "./backend/audioAnalyzer.h"
 
 int main(int argc, char *argv[])
 {

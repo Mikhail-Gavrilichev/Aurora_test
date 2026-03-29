@@ -40,6 +40,7 @@ public slots:
     void onRecordError(QMediaRecorder::Error errorMsg);
     void onProbeRecieved(QAudioBuffer buffer);
     void onRecorderStatusChanged(QMediaRecorder::Status status);
+    void onRecorderStateChanged(QMediaRecorder::State state);
 };
 
 #endif
