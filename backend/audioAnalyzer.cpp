@@ -24,11 +24,8 @@ QVariantList AudioAnalyzer::analyzeFile(const QString &filePath)
     if (!file) return result;
 
     WAVHeader header;
-    char chunkId[4];
-    uint32_t chunkSize;
 
-    file.read(reinterpret_cast<char*>(&chunkSize), 4);
-    qDebug() << chunkId;
+    file.read(reinterpret_cast<char*>(&header), sizeof(WAVHeader));
 
     if (std::string(header.riff, 4) != "RIFF" || header.audioFormat != 1 || header.bitsPerSample != 16)
         return result;
@@ -48,7 +45,6 @@ QVariantList AudioAnalyzer::analyzeFile(const QString &filePath)
 
     std::vector<double> rmsValues;
     std::vector<int16_t> buffer(frameSamples * channels);
-    qDebug() << buffer[0] << buffer[1] << buffer[2];
 
     while (file.read(reinterpret_cast<char*>(buffer.data()), buffer.size() * sizeof(int16_t))) {
         std::vector<int16_t> mono(frameSamples);
@@ -62,6 +58,7 @@ QVariantList AudioAnalyzer::analyzeFile(const QString &filePath)
         }
 
         rmsValues.push_back(computeRMS(mono));
+        qDebug() << buffer[0] << buffer[1] << buffer[2];
     }
 
     if (rmsValues.empty()) return result;
@@ -80,7 +77,7 @@ QVariantList AudioAnalyzer::analyzeFile(const QString &filePath)
     }
 
     // --- Сглаживание (anti-flicker) ---
-    const int window = 5;
+    const int window = 40;
 
     std::vector<int> smooth = labels;
 
@@ -155,6 +152,7 @@ QVariantList AudioAnalyzer::analyzeFile(const QString &filePath)
             current = next;
         }
     }
+    result.append(current);
 
     const double speechPaddingMs = 400.0;
 
@@ -172,6 +170,43 @@ QVariantList AudioAnalyzer::analyzeFile(const QString &filePath)
         }
     }
 
+    QVariantList cleanedResult;
+
+    for (int i = 0; i < result.size(); ++i) {
+        QVariantMap seg = result[i].toMap();
+
+        // Если это тишина (тип 3)
+        if (seg["type"].toInt() == 3) {
+            double t1 = seg["t1"].toDouble();
+            double t2 = seg["t2"].toDouble();
+
+            // Проверяем соседа слева
+            if (i > 0) {
+                double prevEnd = result[i-1].toMap()["t2"].toDouble();
+                if (t1 < prevEnd) t1 = prevEnd; // Подрезаем начало тишины
+            }
+
+            // Проверяем соседа справа
+            if (i < result.size() - 1) {
+                double nextStart = result[i+1].toMap()["t1"].toDouble();
+                if (t2 > nextStart) t2 = nextStart; // Подрезаем конец тишины
+            }
+
+            // Если после подрезки от тишины что-то осталось — сохраняем
+            if (t2 > t1) {
+                seg["t1"] = t1;
+                seg["t2"] = t2;
+                cleanedResult.append(seg);
+            }
+            // Если t2 <= t1, значит речь полностью поглотила этот участок тишины
+        } else {
+            // Речь и Громко добавляем как есть (они уже расширены)
+            cleanedResult.append(seg);
+        }
+    }
+    // Заменяем result на очищенный список для дальнейшей обработки
+    result = cleanedResult;
+
     for (int i = 1; i < result.size(); ++i) {
         QVariantMap prev = result[i - 1].toMap();
         QVariantMap curr = result[i].toMap();
@@ -184,20 +219,44 @@ QVariantList AudioAnalyzer::analyzeFile(const QString &filePath)
         }
     }
 
-    current = segments[0];
+    current = result[0].toMap();
+    QVariantList result_1;
 
-    for (size_t i = 1; i < segments.size(); ++i) {
-        QVariantMap next = segments[i];
+    for (size_t i = 1; i < static_cast<size_t>(result.size()); ++i) {
+        QVariantMap next = result[i].toMap();
 
         if (next["type"].toInt() == current["type"].toInt()) {
             current["t2"] = next["t2"];
         } else {
-            result.append(current);
+            result_1.append(current);
             current = next;
         }
     }
+    result_1.append(current);
 
-    result.append(current);
+    const double minDurationMs = 500.0;
+    QVariantList finalResult;
 
-    return result;
+    for (int i = 0; i < result_1.size(); ++i) {
+        QVariantMap seg = result_1[i].toMap();
+        double duration = seg["t2"].toDouble() - seg["t1"].toDouble();
+        int type = seg["type"].toInt();
+
+        if ((type == 1 || type == 2) && duration < minDurationMs) {
+            seg["type"] = 3; // Теперь мы меняем локальную копию и ПЕРЕЗАПИСЫВАЕМ её ниже
+        }
+
+        // Сразу делаем финальное слияние, чтобы тишина не дробилась
+        if (!finalResult.isEmpty()) {
+            QVariantMap last = finalResult.last().toMap();
+            if (last["type"].toInt() == seg["type"].toInt()) {
+                last["t2"] = seg["t2"];
+                finalResult[finalResult.size() - 1] = last;
+                continue;
+            }
+        }
+        finalResult.append(seg);
+    }
+
+    return finalResult;
 }

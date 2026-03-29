@@ -13,9 +13,15 @@ int main(int argc, char *argv[])
     application->setApplicationName(QStringLiteral("SmartVoiceRecorder"));
 
     // 2. Регистрируем типы (достаточно одного раза!)
-    qmlRegisterType<AudioPlayerController>("ru.auroraos.AudioRecorder", 1, 0, "AudioPlayerController");
+    qmlRegisterType<AudioPlayerController>("ru.auroraos.AudioRecorder",
+                                           1,
+                                           0,
+                                           "AudioPlayerController");
     qmlRegisterType<AudioAnalyzer>("ru.auroraos.AudioAnalyzer", 1, 0, "AudioAnalyzer");
-    qmlRegisterType<AudioRecorderController>("ru.auroraos.AudioRecorder", 1, 0, "AudioRecorderController");
+    qmlRegisterType<AudioRecorderController>("ru.auroraos.AudioRecorder",
+                                             1,
+                                             0,
+                                             "AudioRecorderController");
 
     // 3. Создаем объект бэкенда
     AudioRecorder recorder;
@@ -32,4 +38,3 @@ int main(int argc, char *argv[])
 
     return application->exec();
 }
-
