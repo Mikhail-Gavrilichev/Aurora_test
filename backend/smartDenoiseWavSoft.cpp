@@ -5,6 +5,10 @@
 #include <QVariantList>
 #include <QVariantMap>
 #include "AudioAnalyzer.h"
+<<<<<<< Updated upstream
+=======
+#include <QDebug>
+>>>>>>> Stashed changes
 
 bool applyDenoiseOnly(
     const QString &filePath,
@@ -14,6 +18,10 @@ bool applyDenoiseOnly(
 
     // --- 1. Получаем сегменты из новой системы ---
     QVariantList segments = analyzer.analyzeFile(filePath);
+<<<<<<< Updated upstream
+=======
+    qDebug() << "Segments count:" << segments.size();
+>>>>>>> Stashed changes
 
     std::ifstream inFile(filePath.toStdString(), std::ios::binary);
     if (!inFile) return false;
@@ -43,12 +51,24 @@ bool applyDenoiseOnly(
 
     for (const QVariant &v : segments) {
         QVariantMap seg = v.toMap();
+<<<<<<< Updated upstream
+=======
+        qDebug() << "Segment:"
+                 << "type=" << seg["type"]
+                 << "t1=" << seg["t1"]
+                 << "t2=" << seg["t2"];
+>>>>>>> Stashed changes
 
         int type = seg["type"].toInt();
         if (type != 3) continue; // 3 = тишина
 
         uint32_t startSample = seg["t1"].toDouble() * sampleRate / 1000;
         uint32_t endSample = seg["t2"].toDouble() * sampleRate / 1000;
+<<<<<<< Updated upstream
+=======
+        qDebug() << "[Silence] startSample:" << startSample
+                 << "endSample:" << endSample;
+>>>>>>> Stashed changes
 
         endSample = std::min(endSample, static_cast<uint32_t>(buffer.size() / channels));
 
@@ -64,6 +84,7 @@ bool applyDenoiseOnly(
     // fallback если тишина не найдена
     double backgroundRMS = (count > 0) ? std::sqrt(sumSq / count) : 800.0;
 
+<<<<<<< Updated upstream
     double noiseThreshold = backgroundRMS * 1.5;
 
     // --- 4. Применяем denoise ---
@@ -81,6 +102,32 @@ bool applyDenoiseOnly(
             smoothFactor = std::max(smoothFactor, 0.05);
 
             sample = static_cast<int16_t>(sample * smoothFactor);
+=======
+    double noiseThreshold = backgroundRMS * 2;
+
+    // --- 4. Применяем denoise ---
+    std::vector<int16_t> outBuffer = buffer;
+    qDebug() << "noiseThreshold:"<< noiseThreshold;
+
+    for (const QVariant &v : segments) {
+        QVariantMap seg = v.toMap();
+        int type = seg["type"].toInt();
+
+        if (type != 3) continue; // только тишина
+
+        uint32_t startSample = seg["t1"].toDouble() * sampleRate / 1000;
+        uint32_t endSample   = seg["t2"].toDouble() * sampleRate / 1000;
+
+        startSample = std::min(startSample, static_cast<uint32_t>(outBuffer.size() / channels));
+        endSample   = std::min(endSample,   static_cast<uint32_t>(outBuffer.size() / channels));
+
+        for (uint32_t i = startSample; i < endSample; ++i) {
+            for (int ch = 0; ch < channels; ++ch) {
+                int16_t &sample = outBuffer[i * channels + ch];
+
+                sample = static_cast<int16_t>(sample * 0.1);
+            }
+>>>>>>> Stashed changes
         }
     }
 

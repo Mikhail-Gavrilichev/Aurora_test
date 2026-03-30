@@ -3,6 +3,10 @@ import Sailfish.Silica 1.0
 import ru.auroraos.AudioRecorder 1.0
 import Aurora.Controls 1.0
 import Sailfish.Pickers 1.0
+<<<<<<< Updated upstream
+=======
+import ru.auroraos.AudioRecorder 1.0
+>>>>>>> Stashed changes
 import ru.auroraos.AudioAnalyzer 1.0
 import "../components"
 
@@ -16,12 +20,165 @@ Page {
     // аннотации теперь заполняются из C++
     property var fileAnnotations: []
 
+<<<<<<< Updated upstream
     // должно совпадать с C++ и формулами
     readonly property int measurementsPerSec: 10
     readonly property int barWidthPx: 6
 
     AudioAnalyzer {
         id: analyzer
+=======
+    property var fileAnnotations: []
+
+    property var voiceLabels: []
+    property var annotationsWithIds: []
+
+    property string lastError: ""
+
+    SilenceService { id: silenceService }
+
+    AudioAnalyzer {
+        id: audioAnalyzer
+    }
+
+    function rebuildVoiceIdsAndTitles() {
+        var voiceCounter = 0
+        var result = []
+        for (var i = 0; i < fileAnnotations.length; i++) {
+            var a = fileAnnotations[i]
+            var obj = { "t1": a.t1, "t2": a.t2, "type": a.type }
+            if (a.type === 1) {
+                voiceCounter++
+                obj.voiceId = voiceCounter
+            }
+            result.push(obj)
+        }
+        annotationsWithIds = result
+
+        var newLabels = []
+        for (var id = 1; id <= voiceCounter; id++) {
+            var found = null
+            for (var j = 0; j < voiceLabels.length; j++) {
+                if (voiceLabels[j].voiceId === id) { found = voiceLabels[j]; break }
+            }
+            if (found) newLabels.push(found)
+            else newLabels.push({ "voiceId": id, "title": "человеческая речь " + id })
+        }
+        voiceLabels = newLabels
+    }
+
+    function titleForVoiceId(voiceId) {
+        for (var i = 0; i < voiceLabels.length; i++) {
+            if (voiceLabels[i].voiceId === voiceId) return voiceLabels[i].title
+        }
+        return "человеческая речь " + voiceId
+    }
+
+    function setTitleForVoiceId(voiceId, newTitle) {
+        var t = (newTitle || "").trim()
+        if (t.length === 0) t = "человеческая речь " + voiceId
+        for (var i = 0; i < voiceLabels.length; i++) {
+            if (voiceLabels[i].voiceId === voiceId) {
+                voiceLabels[i].title = t
+                voiceLabels = voiceLabels
+                return
+            }
+        }
+    }
+
+    function removeSilenceNow() {
+        if (!filePath || filePath === "") return
+        lastError = ""
+        playerControllerRedact.pause()
+
+        var r = silenceService.removeSilence(filePath, fileAnnotations, silence_type)
+        processCutResult(r)
+    }
+
+    function deleteSegmentUnderCursor() {
+        if (!filePath || filePath === "") return
+
+        var pos = currentPosMs
+        var targetIndex = -1
+
+        for (var i = 0; i < fileAnnotations.length; i++) {
+            if (pos >= fileAnnotations[i].t1 && pos < fileAnnotations[i].t2) {
+                targetIndex = i
+                break
+            }
+        }
+
+        if (targetIndex === -1 && fileAnnotations.length > 0) {
+            var last = fileAnnotations[fileAnnotations.length - 1]
+            if (pos === last.t2) targetIndex = fileAnnotations.length - 1
+        }
+
+        if (targetIndex === -1) {
+            lastError = "Нет сегмента под курсором (поз: " + Math.round(pos) + "мс)"
+            return
+        }
+
+        lastError = ""
+        playerControllerRedact.pause()
+
+        var fakeAnnotations = JSON.parse(JSON.stringify(fileAnnotations))
+        fakeAnnotations[targetIndex].type = 999
+
+        var r = silenceService.removeSilence(filePath, fakeAnnotations, 999)
+        processCutResult(r)
+    }
+
+    function processCutResult(r) {
+        if (!r || r.error) {
+            lastError = r ? r.error : "Ошибка: пустой ответ"
+            return
+        }
+
+        var raw = r.annotations
+        var clean = []
+
+        for (var i = 0; i < raw.length; i++) {
+            var cur = raw[i]
+            if (cur.t1 >= cur.t2) continue
+            clean.push({ "t1": cur.t1, "t2": cur.t2, "type": cur.type })
+        }
+
+        filePath = r.outputPath
+        header.headerText = filePath ? filePath.split('/').pop() : ""
+
+        fileAnnotations = clean
+        rebuildVoiceIdsAndTitles()
+
+        playerControllerRedact.setSource(filePath)
+        playerControllerRedact.audioAmplitudeModel.applyAnnotations(fileAnnotations, measurementsPerSec)
+    }
+
+    function seekToNextSegment() {
+        var currentPos = currentPosMs
+        var nextPos = -1
+        for (var i = 0; i < fileAnnotations.length; i++) {
+            if (fileAnnotations[i].t1 > currentPos + 50) {
+                if (nextPos === -1 || fileAnnotations[i].t1 < nextPos) {
+                    nextPos = fileAnnotations[i].t1
+                }
+            }
+        }
+        if (nextPos !== -1) pageRoot.seekToMs(nextPos)
+    }
+
+    function seekToPrevSegment() {
+        var currentPos = currentPosMs
+        var prevPos = -1
+        for (var i = 0; i < fileAnnotations.length; i++) {
+            if (fileAnnotations[i].t1 < currentPos - 50) {
+                if (prevPos === -1 || fileAnnotations[i].t1 > prevPos) {
+                    prevPos = fileAnnotations[i].t1
+                }
+            }
+        }
+        if (prevPos !== -1) pageRoot.seekToMs(prevPos)
+        else pageRoot.seekToMs(0)
+>>>>>>> Stashed changes
     }
 
     Component.onCompleted: {
@@ -246,7 +403,15 @@ Page {
                 filePath = selectedPath
                 updateAnnotations()
                 header.headerText = dialog.selectedContentProperties.fileName || selectedPath.split('/').pop()
+<<<<<<< Updated upstream
                 playerController.setSource(selectedPath)
+=======
+                lastError = ""
+                voiceLabels = []
+                rebuildVoiceIdsAndTitles()
+                playerControllerRedact.setSource(selectedPath)
+                fileAnnotations = audioAnalyzer.analyzeFile(selectedPath)
+>>>>>>> Stashed changes
                 pageStack.pop()
             }
         })

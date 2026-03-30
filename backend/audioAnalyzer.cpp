@@ -3,7 +3,10 @@
 #include <cmath>
 #include <vector>
 #include <QUrl>
+<<<<<<< Updated upstream
 #include <QDebug>
+=======
+>>>>>>> Stashed changes
 #include <QVariantMap>
 
 // Структура для промежуточного анализа кадров
@@ -58,14 +61,22 @@ QVariantList AudioAnalyzer::analyzeFile(const QString &filePath)
         }
 
         rmsValues.push_back(computeRMS(mono));
+<<<<<<< Updated upstream
         qDebug() << buffer[0] << buffer[1] << buffer[2];
+=======
+>>>>>>> Stashed changes
     }
 
     if (rmsValues.empty()) return result;
 
     // --- Пороговая классификация ---
+<<<<<<< Updated upstream
     const double speechThreshold = 1200.0;
     const double loudThreshold   = 6000.0;
+=======
+    const double speechThreshold = 800.0;
+    const double loudThreshold   = 4000.0;
+>>>>>>> Stashed changes
 
     std::vector<int> labels;
     labels.reserve(rmsValues.size());
